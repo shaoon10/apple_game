@@ -1,0 +1,767 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>사과게임 (Apple Game)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f7f9fc;
+      --card-bg: #ffffff;
+      --primary: #ff4757;
+      --primary-hover: #ee3545;
+      --accent: #2ed573;
+      --text: #2f3542;
+      --gray: #747d8c;
+      --border: #e4e7eb;
+      --selection-bg: rgba(255, 71, 87, 0.18);
+      --selection-border: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #f1f2f6 0%, #dfe4ea 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 24px 30px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .title-area h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ff3838;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-area p {
+      font-size: 13px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+
+    .status-panel {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #f8f9fa;
+      padding: 10px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 45px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--gray);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .stat-value.score {
+      color: #ff4757;
+    }
+
+    .stat-value.timer {
+      color: #3742fa;
+    }
+
+    .stat-value.combo {
+      color: #ffa502;
+    }
+
+    .stat-value.sum {
+      color: #2ed573;
+      min-width: 35px;
+      text-align: center;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 71, 87, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .board-wrapper {
+      position: relative;
+      touch-action: none;
+      padding: 8px;
+      background: #fff5f5;
+      border-radius: 16px;
+      border: 2px dashed #ffccd2;
+    }
+
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(17, 36px);
+      grid-template-rows: repeat(10, 36px);
+      gap: 5px;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      #game-board {
+        grid-template-columns: repeat(17, 20px);
+        grid-template-rows: repeat(10, 20px);
+        gap: 2px;
+      }
+    }
+
+    /* 사과 셀 및 디자인 */
+    .apple-cell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .apple {
+      width: 100%;
+      height: 100%;
+      background: #ff4d4d;
+      border-radius: 50% 50% 46% 46%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      position: relative;
+      box-shadow: inset 0 -3px 4px rgba(0,0,0,0.15), 0 2px 4px rgba(255, 77, 77, 0.3);
+      transition: transform 0.1s ease, filter 0.1s ease;
+      cursor: crosshair;
+    }
+
+    /* 꼭지와 잎사귀 디테일 */
+    .apple::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 5px;
+      background: #8b5a2b;
+      border-radius: 2px;
+    }
+
+    .apple::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      right: 28%;
+      width: 6px;
+      height: 4px;
+      background: #7bed9f;
+      border-radius: 50% 0 50% 0;
+    }
+
+    @media (max-width: 768px) {
+      .apple {
+        font-size: 11px;
+      }
+      .apple::before, .apple::after {
+        display: none;
+      }
+    }
+
+    .apple.selected {
+      filter: brightness(1.15) drop-shadow(0 0 6px rgba(255, 235, 59, 0.95));
+      transform: scale(1.08);
+      outline: 2px solid #ffd32a;
+    }
+
+    .apple.cleared {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* 드래그 영역 상자 */
+    #selection-box {
+      position: absolute;
+      display: none;
+      border: 2px solid var(--selection-border);
+      background-color: var(--selection-bg);
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* 플로팅 현재 합계 말풍선 */
+    #sum-bubble {
+      position: absolute;
+      display: none;
+      background: #2f3542;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      transform: translate(-50%, -100%);
+      margin-top: -8px;
+      white-space: nowrap;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+
+    #sum-bubble.target-hit {
+      background: #2ed573;
+      transform: translate(-50%, -100%) scale(1.15);
+    }
+
+    #sum-bubble.target-over {
+      background: #e55039;
+    }
+
+    /* 플로팅 텍스트 팝업 */
+    .floating-popup {
+      position: absolute;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 18px;
+      color: #ffbe10;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      z-index: 30;
+      animation: floatUp 0.8s ease-out forwards;
+      transform: translate(-50%, -50%);
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+      50% { transform: translate(-50%, -80%) scale(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+    }
+
+    /* 오버레이 모달 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      background: white;
+      padding: 36px 40px;
+      border-radius: 24px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-card h2 {
+      font-size: 28px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .modal-score {
+      font-size: 52px;
+      font-weight: 900;
+      color: #ff4757;
+      margin: 16px 0;
+    }
+
+    .modal-stats {
+      font-size: 15px;
+      color: var(--gray);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    @keyframes popOut {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3) rotate(15deg); opacity: 0.8; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    .apple.animating {
+      animation: popOut 0.26s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .rule-info {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #88909d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="title-area">
+        <h1>🍎 사과게임</h1>
+        <p>드래그하여 사과 번호의 합이 <strong>10</strong>이 되도록 사각형을 만드세요!</p>
+      </div>
+      <div class="status-panel">
+        <div class="stat-box">
+          <span class="stat-label">시간</span>
+          <span class="stat-value timer" id="timer">120</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">점수</span>
+          <span class="stat-value score" id="score">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">콤보</span>
+          <span class="stat-value combo" id="combo">0x</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">현재 합</span>
+          <span class="stat-value sum" id="current-sum">0</span>
+        </div>
+        <button class="btn" id="restart-btn">다시 시작</button>
+      </div>
+    </header>
+
+    <div class="board-wrapper" id="board-wrapper">
+      <div id="game-board"></div>
+      <div id="selection-box"></div>
+      <div id="sum-bubble">0</div>
+    </div>
+
+    <div class="rule-info">
+      💡 사각형 칸 일부에 마우스 드래그 영역이 걸치기만 해도 즉시 사과가 선택됩니다!
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="game-over-modal">
+    <div class="modal-card">
+      <h2>⏰ 게임 종료!</h2>
+      <div class="modal-score" id="final-score">0점</div>
+      <div class="modal-stats" id="final-stats">남은 사과: 0개</div>
+      <button class="btn" id="modal-restart-btn" style="width: 100%; padding: 12px; font-size: 16px;">한 번 더 도전하기</button>
+    </div>
+  </div>
+
+  <script>
+    const ROWS = 10;
+    const COLS = 17;
+    const TOTAL_TIME = 120;
+
+    let boardData = [];
+    let score = 0;
+    let combo = 0;
+    let comboTimer = null;
+    let timeLeft = TOTAL_TIME;
+    let timerInterval = null;
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let selectedCells = [];
+
+    const boardElement = document.getElementById('game-board');
+    const boardWrapper = document.getElementById('board-wrapper');
+    const selectionBox = document.getElementById('selection-box');
+    const sumBubble = document.getElementById('sum-bubble');
+    const scoreElement = document.getElementById('score');
+    const comboElement = document.getElementById('combo');
+    const timerElement = document.getElementById('timer');
+    const currentSumElement = document.getElementById('current-sum');
+    const restartBtn = document.getElementById('restart-btn');
+    const modal = document.getElementById('game-over-modal');
+    const modalRestartBtn = document.getElementById('modal-restart-btn');
+    const finalScoreElement = document.getElementById('final-score');
+    const finalStatsElement = document.getElementById('final-stats');
+
+    let audioCtx = null;
+    function playMatchSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          const startTime = now + idx * 0.035;
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.18, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.28);
+        });
+      } catch (err) {}
+    }
+
+    function initGame() {
+      score = 0;
+      combo = 0;
+      timeLeft = TOTAL_TIME;
+      scoreElement.textContent = score;
+      comboElement.textContent = '0x';
+      timerElement.textContent = timeLeft;
+      currentSumElement.textContent = '0';
+      modal.classList.remove('active');
+
+      clearInterval(timerInterval);
+      clearTimeout(comboTimer);
+      createBoard();
+      startTimer();
+    }
+
+    function createBoard() {
+      boardElement.innerHTML = '';
+      boardData = [];
+
+      for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+          const val = Math.floor(Math.random() * 9) + 1;
+          
+          const cellContainer = document.createElement('div');
+          cellContainer.className = 'apple-cell';
+
+          const apple = document.createElement('div');
+          apple.className = 'apple';
+          apple.textContent = val;
+          apple.dataset.row = r;
+          apple.dataset.col = c;
+          
+          cellContainer.appendChild(apple);
+          boardElement.appendChild(cellContainer);
+
+          row.push({
+            value: val,
+            container: cellContainer,
+            element: apple,
+            cleared: false,
+            row: r,
+            col: c
+          });
+        }
+        boardData.push(row);
+      }
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerElement.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(timerInterval);
+      clearTimeout(comboTimer);
+      isDragging = false;
+      selectionBox.style.display = 'none';
+      sumBubble.style.display = 'none';
+
+      let remaining = 0;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (!boardData[r][c].cleared) remaining++;
+        }
+      }
+
+      finalScoreElement.textContent = `${score}점`;
+      finalStatsElement.innerHTML = `제거한 사과: <strong>${score}개</strong><br>남은 사과: <strong>${remaining}개</strong>`;
+      modal.classList.add('active');
+    }
+
+    function getRelativePos(e) {
+      const rect = boardWrapper.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+        clientX,
+        clientY
+      };
+    }
+
+    function onPointerDown(e) {
+      if (timeLeft <= 0) return;
+      isDragging = true;
+      const pos = getRelativePos(e);
+      dragStart = { x: pos.x, y: pos.y };
+
+      selectionBox.style.left = `${pos.x}px`;
+      selectionBox.style.top = `${pos.y}px`;
+      selectionBox.style.width = '0px';
+      selectionBox.style.height = '0px';
+      selectionBox.style.display = 'block';
+
+      updateSelection(pos.x, pos.y);
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging || timeLeft <= 0) return;
+      const pos = getRelativePos(e);
+      updateSelection(pos.x, pos.y);
+    }
+
+    function updateSelection(currentX, currentY) {
+      const left = Math.min(dragStart.x, currentX);
+      const top = Math.min(dragStart.y, currentY);
+      const width = Math.abs(currentX - dragStart.x);
+      const height = Math.abs(currentY - dragStart.y);
+
+      selectionBox.style.left = `${left}px`;
+      selectionBox.style.top = `${top}px`;
+      selectionBox.style.width = `${width}px`;
+      selectionBox.style.height = `${height}px`;
+
+      const boxRect = selectionBox.getBoundingClientRect();
+
+      selectedCells.forEach(cell => {
+        cell.element.classList.remove('selected');
+      });
+      selectedCells = [];
+
+      let currentSum = 0;
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = boardData[r][c];
+          if (cell.cleared) continue;
+
+          const cellRect = cell.container.getBoundingClientRect();
+
+          const isIntersecting = !(
+            boxRect.right < cellRect.left ||
+            boxRect.left > cellRect.right ||
+            boxRect.bottom < cellRect.top ||
+            boxRect.top > cellRect.bottom
+          );
+
+          if (isIntersecting) {
+            selectedCells.push(cell);
+            cell.element.classList.add('selected');
+            currentSum += cell.value;
+          }
+        }
+      }
+
+      currentSumElement.textContent = currentSum;
+
+      if (selectedCells.length > 0) {
+        sumBubble.style.display = 'block';
+        sumBubble.style.left = `${left + width / 2}px`;
+        sumBubble.style.top = `${top}px`;
+        sumBubble.textContent = `합: ${currentSum}`;
+
+        sumBubble.className = '';
+        if (currentSum === 10) {
+          sumBubble.classList.add('target-hit');
+          selectionBox.style.borderColor = '#2ed573';
+          selectionBox.style.backgroundColor = 'rgba(46, 213, 115, 0.24)';
+        } else if (currentSum > 10) {
+          sumBubble.classList.add('target-over');
+          selectionBox.style.borderColor = '#ff4757';
+          selectionBox.style.backgroundColor = 'rgba(255, 71, 87, 0.18)';
+        } else {
+          selectionBox.style.borderColor = '#ffa502';
+          selectionBox.style.backgroundColor = 'rgba(255, 165, 2, 0.15)';
+        }
+      } else {
+        sumBubble.style.display = 'none';
+        selectionBox.style.borderColor = '#ff4757';
+        selectionBox.style.backgroundColor = 'rgba(255, 71, 87, 0.18)';
+      }
+    }
+
+    function spawnPopup(text, x, y) {
+      const popup = document.createElement('div');
+      popup.className = 'floating-popup';
+      popup.textContent = text;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      boardWrapper.appendChild(popup);
+      setTimeout(() => popup.remove(), 800);
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      selectionBox.style.display = 'none';
+      sumBubble.style.display = 'none';
+
+      let sum = 0;
+      selectedCells.forEach(cell => {
+        sum += cell.value;
+      });
+
+      if (sum === 10 && selectedCells.length > 0) {
+        playMatchSound();
+        
+        combo++;
+        comboElement.textContent = `${combo}x`;
+        clearTimeout(comboTimer);
+        comboTimer = setTimeout(() => {
+          combo = 0;
+          comboElement.textContent = '0x';
+        }, 3000);
+
+        const count = selectedCells.length;
+        const addScore = count + (combo > 1 ? (combo - 1) : 0);
+        score += addScore;
+        scoreElement.textContent = score;
+
+        let sumX = 0, sumY = 0;
+        selectedCells.forEach(cell => {
+          cell.cleared = true;
+          cell.element.classList.remove('selected');
+          cell.element.classList.add('animating');
+
+          const rect = cell.container.getBoundingClientRect();
+          const wrapRect = boardWrapper.getBoundingClientRect();
+          sumX += (rect.left + rect.width / 2) - wrapRect.left;
+          sumY += (rect.top + rect.height / 2) - wrapRect.top;
+
+          setTimeout(() => {
+            cell.element.classList.remove('animating');
+            cell.element.classList.add('cleared');
+          }, 250);
+        });
+
+        spawnPopup(combo > 1 ? `+${addScore} (${combo} COMBO!)` : `+${addScore}`, sumX / count, sumY / count);
+
+      } else {
+        selectedCells.forEach(cell => {
+          cell.element.classList.remove('selected');
+        });
+      }
+
+      selectedCells = [];
+      currentSumElement.textContent = '0';
+
+      checkClearAll();
+    }
+
+    function checkClearAll() {
+      let allCleared = true;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (!boardData[r][c].cleared) {
+            allCleared = false;
+            break;
+          }
+        }
+      }
+      if (allCleared) {
+        endGame();
+      }
+    }
+
+    boardWrapper.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+
+    boardWrapper.addEventListener('touchstart', onPointerDown, { passive: false });
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerUp);
+
+    restartBtn.addEventListener('click', initGame);
+    modalRestartBtn.addEventListener('click', initGame);
+
+    initGame();
+  </script>
+</body>
+</html>
